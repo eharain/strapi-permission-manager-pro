@@ -13,13 +13,17 @@ const conditionEvaluator = require("./services/condition-evaluator");
 const filterBuilder = require("./services/filter-builder");
 const ownershipHandler = require("./services/ownership-handler");
 const permissionEngine = require("./services/permission-engine");
+const requestInterceptor = require("./services/request-interceptor");
 
 module.exports = {
   config: {
     default: {
       headerDomainKey: "x-rutba-app",
+      domainQueryKey: "_domain",
       headerElevatedKey: "x-rutba-app-admin",
-      enforceOwnership: true,
+      publicRoleType: "public",
+      bypassPaths: ["/admin", "/permission-manager-pro"],
+      interceptorEnabled: true,
       denyByDefault: true,
     },
     validator() {},
@@ -27,8 +31,13 @@ module.exports = {
 
   register() {},
 
-  bootstrap() {
-    strapi.log.info("[strapi-permission-manager-pro] bootstrap completed");
+  bootstrap({ strapi }) {
+    strapi.server.use(async (ctx, next) => {
+      const interceptor = strapi.plugin("permission-manager-pro").service("request-interceptor");
+      await interceptor.intercept(ctx, next);
+    });
+
+    strapi.log.info("[strapi-permission-manager-pro] bootstrap completed with request interceptor");
   },
 
   destroy() {},
@@ -58,5 +67,6 @@ module.exports = {
     "filter-builder": filterBuilder,
     "ownership-handler": ownershipHandler,
     "permission-engine": permissionEngine,
+    "request-interceptor": requestInterceptor,
   },
 };

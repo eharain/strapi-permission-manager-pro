@@ -4,7 +4,7 @@
   "info": {
     "singularName": "permission-role",
     "pluralName": "permission-roles",
-    "displayName": "Permission Role"
+    "displayName": "Permission App Domain Group"
   },
   "options": {
     "draftAndPublish": false
@@ -23,26 +23,40 @@
       "required": true,
       "unique": true
     },
+    "label": {
+      "type": "string",
+      "required": true
+    },
     "level": {
       "type": "enumeration",
-      "enum": [
-        "staff",
-        "manager",
-        "admin",
-        "super-admin"
-      ],
+      "enum": ["staff", "manager", "admin", "super-admin"],
+      "default": "staff",
       "required": true
     },
     "domain": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::permission-manager-pro.permission-domain"
+      "target": "plugin::permission-manager-pro.permission-domain",
+      "required": true
+    },
+    "resources": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::permission-manager-pro.permission-resource"
     },
     "users": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "plugin::users-permissions.user",
       "mappedBy": "permission_roles"
+    },
+    "isBundle": {
+      "type": "boolean",
+      "default": false
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

@@ -4,7 +4,7 @@
   "info": {
     "singularName": "permission-resource",
     "pluralName": "permission-resources",
-    "displayName": "Permission Resource"
+    "displayName": "Permission Route Resource"
   },
   "options": {
     "draftAndPublish": false
@@ -23,33 +23,59 @@
       "required": true,
       "unique": true
     },
-    "uid": {
+    "label": {
       "type": "string",
       "required": true
     },
-    "methods": {
-      "type": "json",
-      "default": ["get", "post", "put", "delete"]
-    },
-    "fieldScope": {
+    "resourceType": {
       "type": "enumeration",
-      "enum": ["all", "selected"],
-      "default": "all",
+      "enum": ["standard", "extended", "alias"],
+      "default": "standard",
       "required": true
     },
-    "fields": {
+    "pathPattern": {
+      "type": "string",
+      "required": true
+    },
+    "method": {
+      "type": "enumeration",
+      "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "required": true
+    },
+    "contentTypeUid": {
+      "type": "string"
+    },
+    "controllerAction": {
+      "type": "string"
+    },
+    "aliasPath": {
+      "type": "string"
+    },
+    "effect": {
+      "type": "enumeration",
+      "enum": ["allow", "deny"],
+      "default": "allow",
+      "required": true
+    },
+    "conditions": {
       "type": "json",
       "default": []
     },
-    "domain": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::permission-manager-pro.permission-domain"
+    "requestRules": {
+      "type": "json",
+      "default": {}
     },
-    "parentResource": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::permission-manager-pro.permission-resource"
+    "responseRules": {
+      "type": "json",
+      "default": {}
+    },
+    "isPublic": {
+      "type": "boolean",
+      "default": false
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

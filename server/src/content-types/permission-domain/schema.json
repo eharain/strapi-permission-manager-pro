@@ -4,7 +4,7 @@
   "info": {
     "singularName": "permission-domain",
     "pluralName": "permission-domains",
-    "displayName": "Permission Domain"
+    "displayName": "Permission App Domain"
   },
   "options": {
     "draftAndPublish": false
@@ -29,6 +29,26 @@
     },
     "description": {
       "type": "text"
+    },
+    "strapiRoleType": {
+      "type": "string",
+      "required": true,
+      "default": "authenticated"
+    },
+    "matchMode": {
+      "type": "enumeration",
+      "enum": ["header", "query", "both"],
+      "default": "header",
+      "required": true
+    },
+    "matchKey": {
+      "type": "string",
+      "required": true,
+      "default": "x-rutba-app"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

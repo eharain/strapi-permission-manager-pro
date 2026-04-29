@@ -65,4 +65,12 @@ module.exports = [
       auth: false,
     },
   },
+  {
+    method: "GET",
+    path: "/discovered-resources",
+    handler: "ui.discoveredResources",
+    config: {
+      auth: false,
+    },
+  },
 ];

@@ -1,46 +1,23 @@
 "use strict";
 
-async function purgeResourceDependents(strapi, resourceId) {
-  // Find all policies linked to this resource
-  const policies = await strapi.db
-    .query("plugin::permission-manager-pro.permission-policy")
-    .findMany({ where: { resource: resourceId }, select: ["id"] });
-
-  const policyIds = policies.map((p) => p.id);
-
-  // Delete grants linked to those policies
-  if (policyIds.length > 0) {
-    await strapi.db
-      .query("plugin::permission-manager-pro.permission-grant")
-      .deleteMany({ where: { policy: { $in: policyIds } } });
-
-    // Delete the policies
-    await strapi.db
-      .query("plugin::permission-manager-pro.permission-policy")
-      .deleteMany({ where: { id: { $in: policyIds } } });
-  }
-
-  // Delete child resources (selected-field subsets) linked to this parent
-  await strapi.db
-    .query("plugin::permission-manager-pro.permission-resource")
-    .deleteMany({ where: { parentResource: resourceId } });
-}
-
 const MODEL_UIDS = {
   domains: "plugin::permission-manager-pro.permission-domain",
   resources: "plugin::permission-manager-pro.permission-resource",
   roles: "plugin::permission-manager-pro.permission-role",
-  policies: "plugin::permission-manager-pro.permission-policy",
-  grants: "plugin::permission-manager-pro.permission-grant",
   users: "plugin::users-permissions.user",
 };
 
 const DEFAULT_POPULATE = {
   domains: {},
-  resources: { domain: true, parentResource: true },
-  roles: { domain: true, users: { fields: ["id", "username", "email", "displayName"] } },
-  policies: { resource: true },
-  grants: { role: { populate: { domain: true } }, policy: { populate: { resource: true } } },
+  resources: {},
+  roles: { domain: true, resources: true, users: { fields: ["id", "username", "email", "displayName"] } },
+};
+
+const PLURAL_FALLBACK = (uid = "") => {
+  const raw = String(uid).split(".").pop() || "";
+  if (raw.endsWith("s")) return raw;
+  if (raw.endsWith("y")) return `${raw.slice(0, -1)}ies`;
+  return `${raw}s`;
 };
 
 const toNumber = (value) => {
@@ -50,16 +27,14 @@ const toNumber = (value) => {
 
 module.exports = ({ strapi }) => ({
   async overview(ctx) {
-    const [domains, resources, roles, policies, grants, users] = await Promise.all([
+    const [domains, resources, roles, users] = await Promise.all([
       strapi.db.query(MODEL_UIDS.domains).count(),
       strapi.db.query(MODEL_UIDS.resources).count(),
       strapi.db.query(MODEL_UIDS.roles).count(),
-      strapi.db.query(MODEL_UIDS.policies).count(),
-      strapi.db.query(MODEL_UIDS.grants).count(),
       strapi.db.query(MODEL_UIDS.users).count(),
     ]);
 
-    ctx.send({ domains, resources, roles, policies, grants, users });
+    ctx.send({ domains, resources, roles, users });
   },
 
   async list(ctx) {
@@ -106,11 +81,6 @@ module.exports = ({ strapi }) => ({
     const id = toNumber(ctx.params.id);
     if (!id) return ctx.badRequest("Invalid id.");
 
-    // Purge dependents when a resource is deleted
-    if (entity === "resources") {
-      await purgeResourceDependents(strapi, id);
-    }
-
     await strapi.db.query(modelUid).delete({ where: { id } });
     ctx.send({ ok: true });
   },
@@ -128,14 +98,6 @@ module.exports = ({ strapi }) => ({
 
     const payload = ctx.request.body?.data || ctx.request.body || {};
 
-    // If UID changes on a resource, purge dependent policies/grants
-    if (entity === "resources") {
-      const existing = await strapi.db.query(modelUid).findOne({ where: { id } });
-      if (existing && existing.uid !== payload.uid) {
-        await purgeResourceDependents(strapi, id);
-      }
-    }
-
     const updated = await strapi.db.query(modelUid).update({
       where: { id },
       data: payload,
@@ -149,14 +111,94 @@ module.exports = ({ strapi }) => ({
     const allTypes = Object.values(strapi.contentTypes);
     const types = allTypes
       .filter((ct) => !ct.plugin && ct.kind === "collectionType")
-      .map((ct) => ({
-        uid: ct.uid,
-        displayName: ct.info?.displayName || ct.uid,
-        attributes: Object.entries(ct.attributes || {})
-          .filter(([, attr]) => attr.type !== "relation" && attr.type !== "dynamiczone")
-          .map(([name]) => name),
-      }));
+      .map((ct) => {
+        const slug = ct.info?.pluralName || PLURAL_FALLBACK(ct.uid);
+        return {
+          uid: ct.uid,
+          displayName: ct.info?.displayName || ct.uid,
+          attributes: Object.entries(ct.attributes || {})
+            .filter(([, attr]) => attr.type !== "relation" && attr.type !== "dynamiczone")
+            .map(([name]) => name),
+          routes: [
+            { method: "GET", action: "find", pathPattern: `/api/${slug}` },
+            { method: "GET", action: "findOne", pathPattern: `/api/${slug}/:id` },
+            { method: "POST", action: "create", pathPattern: `/api/${slug}` },
+            { method: "PUT", action: "update", pathPattern: `/api/${slug}/:id` },
+            { method: "DELETE", action: "delete", pathPattern: `/api/${slug}/:id` },
+          ],
+        };
+      });
     ctx.send({ data: types });
+  },
+
+  async discoveredResources(ctx) {
+    const allTypes = Object.values(strapi.contentTypes);
+    const resources = [];
+
+    allTypes
+      .filter((ct) => !ct.plugin && ct.kind === "collectionType")
+      .forEach((ct) => {
+        const slug = ct.info?.pluralName || PLURAL_FALLBACK(ct.uid);
+        resources.push(
+          {
+            key: `${ct.uid}.find`,
+            label: `${ct.info?.displayName || ct.uid} / find`,
+            method: "GET",
+            pathPattern: `/api/${slug}`,
+            contentTypeUid: ct.uid,
+            controllerAction: "find",
+            resourceType: "standard",
+            effect: "allow",
+            isActive: true,
+          },
+          {
+            key: `${ct.uid}.findOne`,
+            label: `${ct.info?.displayName || ct.uid} / findOne`,
+            method: "GET",
+            pathPattern: `/api/${slug}/:id`,
+            contentTypeUid: ct.uid,
+            controllerAction: "findOne",
+            resourceType: "standard",
+            effect: "allow",
+            isActive: true,
+          },
+          {
+            key: `${ct.uid}.create`,
+            label: `${ct.info?.displayName || ct.uid} / create`,
+            method: "POST",
+            pathPattern: `/api/${slug}`,
+            contentTypeUid: ct.uid,
+            controllerAction: "create",
+            resourceType: "standard",
+            effect: "allow",
+            isActive: true,
+          },
+          {
+            key: `${ct.uid}.update`,
+            label: `${ct.info?.displayName || ct.uid} / update`,
+            method: "PUT",
+            pathPattern: `/api/${slug}/:id`,
+            contentTypeUid: ct.uid,
+            controllerAction: "update",
+            resourceType: "standard",
+            effect: "allow",
+            isActive: true,
+          },
+          {
+            key: `${ct.uid}.delete`,
+            label: `${ct.info?.displayName || ct.uid} / delete`,
+            method: "DELETE",
+            pathPattern: `/api/${slug}/:id`,
+            contentTypeUid: ct.uid,
+            controllerAction: "delete",
+            resourceType: "standard",
+            effect: "allow",
+            isActive: true,
+          }
+        );
+      });
+
+    ctx.send({ data: resources });
   },
 
   async listUsers(ctx) {
