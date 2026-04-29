@@ -16,7 +16,7 @@ const normalizeHeader = (value) => {
 
 module.exports = ({ strapi }) => ({
   resolve(ctx = {}) {
-    const config = strapi.plugin("strapi-permission-manager-pro").config();
+    const config = strapi.plugin("permission-manager-pro").config();
     const headerDomainKey = config.headerDomainKey || "x-rutba-app";
     const headerElevatedKey = config.headerElevatedKey || "x-rutba-app-admin";
 

@@ -9,6 +9,14 @@
   "options": {
     "draftAndPublish": false
   },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    },
+    "content-type-builder": {
+      "visible": false
+    }
+  },
   "attributes": {
     "key": {
       "type": "string",
@@ -28,6 +36,12 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::permission-manager-pro.permission-domain"
+    },
+    "users": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "permission_roles"
     }
   }
 }

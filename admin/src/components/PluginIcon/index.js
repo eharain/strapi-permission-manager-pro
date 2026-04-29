@@ -1,5 +1,5 @@
 import React from "react";
 
-const PluginIcon = () => <span style={{ fontWeight: 700 }}>PM</span>;
+const PluginIcon = () => React.createElement("span", { style: { fontWeight: 700 } }, "PM");
 
 export default PluginIcon;

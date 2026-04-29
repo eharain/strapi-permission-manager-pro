@@ -17,7 +17,7 @@ const hasOwner = (entity, userId, relationField) => {
 
 module.exports = ({ strapi }) => ({
   assignOnCreate(data = {}, runtime = {}, relationField = "owners") {
-    const config = strapi.plugin("strapi-permission-manager-pro").config();
+    const config = strapi.plugin("permission-manager-pro").config();
     if (!config.enforceOwnership || runtime.isElevated || !runtime.user?.id) {
       return data;
     }

@@ -72,7 +72,7 @@ module.exports = ({ strapi }) => ({
   },
 
   withOwnership(filters = {}, runtime = {}, relationField = "owners") {
-    const config = strapi.plugin("strapi-permission-manager-pro").config();
+    const config = strapi.plugin("permission-manager-pro").config();
     if (!config.enforceOwnership || runtime.isElevated) {
       return filters;
     }

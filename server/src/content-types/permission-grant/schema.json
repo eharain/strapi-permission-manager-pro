@@ -9,7 +9,20 @@
   "options": {
     "draftAndPublish": false
   },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    },
+    "content-type-builder": {
+      "visible": false
+    }
+  },
   "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
     "role": {
       "type": "relation",
       "relation": "manyToOne",
