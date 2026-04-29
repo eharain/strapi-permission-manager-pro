@@ -57,4 +57,12 @@ module.exports = [
       auth: false,
     },
   },
+  {
+    method: "GET",
+    path: "/strapi-content-types",
+    handler: "ui.strapiContentTypes",
+    config: {
+      auth: false,
+    },
+  },
 ];

@@ -1,5 +1,31 @@
 "use strict";
 
+async function purgeResourceDependents(strapi, resourceId) {
+  // Find all policies linked to this resource
+  const policies = await strapi.db
+    .query("plugin::permission-manager-pro.permission-policy")
+    .findMany({ where: { resource: resourceId }, select: ["id"] });
+
+  const policyIds = policies.map((p) => p.id);
+
+  // Delete grants linked to those policies
+  if (policyIds.length > 0) {
+    await strapi.db
+      .query("plugin::permission-manager-pro.permission-grant")
+      .deleteMany({ where: { policy: { $in: policyIds } } });
+
+    // Delete the policies
+    await strapi.db
+      .query("plugin::permission-manager-pro.permission-policy")
+      .deleteMany({ where: { id: { $in: policyIds } } });
+  }
+
+  // Delete child resources (selected-field subsets) linked to this parent
+  await strapi.db
+    .query("plugin::permission-manager-pro.permission-resource")
+    .deleteMany({ where: { parentResource: resourceId } });
+}
+
 const MODEL_UIDS = {
   domains: "plugin::permission-manager-pro.permission-domain",
   resources: "plugin::permission-manager-pro.permission-resource",
@@ -11,7 +37,7 @@ const MODEL_UIDS = {
 
 const DEFAULT_POPULATE = {
   domains: {},
-  resources: { domain: true },
+  resources: { domain: true, parentResource: true },
   roles: { domain: true, users: { fields: ["id", "username", "email", "displayName"] } },
   policies: { resource: true },
   grants: { role: { populate: { domain: true } }, policy: { populate: { resource: true } } },
@@ -69,6 +95,26 @@ module.exports = ({ strapi }) => ({
     ctx.send({ data: created });
   },
 
+  async remove(ctx) {
+    const entity = String(ctx.params.entity || "").trim();
+    const modelUid = MODEL_UIDS[entity];
+
+    if (!modelUid || entity === "users") {
+      return ctx.badRequest("Invalid entity.");
+    }
+
+    const id = toNumber(ctx.params.id);
+    if (!id) return ctx.badRequest("Invalid id.");
+
+    // Purge dependents when a resource is deleted
+    if (entity === "resources") {
+      await purgeResourceDependents(strapi, id);
+    }
+
+    await strapi.db.query(modelUid).delete({ where: { id } });
+    ctx.send({ ok: true });
+  },
+
   async update(ctx) {
     const entity = String(ctx.params.entity || "").trim();
     const modelUid = MODEL_UIDS[entity];
@@ -81,6 +127,15 @@ module.exports = ({ strapi }) => ({
     if (!id) return ctx.badRequest("Invalid id.");
 
     const payload = ctx.request.body?.data || ctx.request.body || {};
+
+    // If UID changes on a resource, purge dependent policies/grants
+    if (entity === "resources") {
+      const existing = await strapi.db.query(modelUid).findOne({ where: { id } });
+      if (existing && existing.uid !== payload.uid) {
+        await purgeResourceDependents(strapi, id);
+      }
+    }
+
     const updated = await strapi.db.query(modelUid).update({
       where: { id },
       data: payload,
@@ -90,19 +145,18 @@ module.exports = ({ strapi }) => ({
     ctx.send({ data: updated });
   },
 
-  async remove(ctx) {
-    const entity = String(ctx.params.entity || "").trim();
-    const modelUid = MODEL_UIDS[entity];
-
-    if (!modelUid || entity === "users") {
-      return ctx.badRequest("Invalid entity.");
-    }
-
-    const id = toNumber(ctx.params.id);
-    if (!id) return ctx.badRequest("Invalid id.");
-
-    await strapi.db.query(modelUid).delete({ where: { id } });
-    ctx.send({ ok: true });
+  async strapiContentTypes(ctx) {
+    const allTypes = Object.values(strapi.contentTypes);
+    const types = allTypes
+      .filter((ct) => !ct.plugin && ct.kind === "collectionType")
+      .map((ct) => ({
+        uid: ct.uid,
+        displayName: ct.info?.displayName || ct.uid,
+        attributes: Object.entries(ct.attributes || {})
+          .filter(([, attr]) => attr.type !== "relation" && attr.type !== "dynamiczone")
+          .map(([name]) => name),
+      }));
+    ctx.send({ data: types });
   },
 
   async listUsers(ctx) {

@@ -28,7 +28,8 @@
       "enum": [
         "staff",
         "manager",
-        "admin"
+        "admin",
+        "super-admin"
       ],
       "required": true
     },

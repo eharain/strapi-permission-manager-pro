@@ -25,13 +25,31 @@
     },
     "uid": {
       "type": "string",
-      "required": true,
-      "unique": true
+      "required": true
+    },
+    "methods": {
+      "type": "json",
+      "default": ["get", "post", "put", "delete"]
+    },
+    "fieldScope": {
+      "type": "enumeration",
+      "enum": ["all", "selected"],
+      "default": "all",
+      "required": true
+    },
+    "fields": {
+      "type": "json",
+      "default": []
     },
     "domain": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::permission-manager-pro.permission-domain"
+    },
+    "parentResource": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::permission-manager-pro.permission-resource"
     }
   }
 }
