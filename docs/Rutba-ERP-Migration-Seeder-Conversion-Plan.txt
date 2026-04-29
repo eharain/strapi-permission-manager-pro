@@ -1,0 +1,218 @@
+RUTBA ERP → PERMISSION PRO MIGRATION & SEED PLAN (WITH OWNER & CONTEXT)
+
+OBJECTIVE:
+Migrate existing:
+
+* app-access config
+* app-access-guard middleware
+
+Into:
+
+* DB-driven permission system
+* Seeded policies + roles + domains
+* Zero downtime
+
+---
+
+## STEP 1 — MAP CORE CONCEPTS
+
+app-access key → permission-domain
+uid → permission-resource
+staff/manager/admin → permission-role
+grants → permission-policy
+header context → runtime context
+
+---
+
+## STEP 2 — GENERATE DOMAINS
+
+From ENTRIES:
+
+stock → permission-domain
+
+---
+
+## STEP 3 — GENERATE RESOURCES
+
+Extract:
+
+api::product.product → product
+
+Create:
+permission-resource
+
+---
+
+## STEP 4 — GENERATE ROLES
+
+stock + staff → stock-staff
+stock + manager → stock-manager
+stock + admin → stock-admin
+
+---
+
+## STEP 5 — EXPAND ACTIONS
+
+READ:
+find, findOne
+
+WRITE:
+find, findOne, create, update, delete
+
+---
+
+## STEP 6 — GENERATE BASE POLICIES
+
+From grants:
+
+{ uid, actions }
+
+→ create policies:
+
+resource = extracted
+actions = expanded
+conditions = {}
+
+---
+
+## STEP 7 — ADD OWNER POLICY (CRITICAL)
+
+Create global policy:
+
+owner-access:
+owners includes $user.id
+
+Apply to all roles unless elevated
+
+---
+
+## STEP 8 — ADD ELEVATION POLICY
+
+admin-bypass:
+condition: isElevated = true
+effect: allow all actions
+
+---
+
+## STEP 9 — ADD SHARED / MANAGER CONDITIONS
+
+shared-access:
+sharedWith includes $user.id
+
+manager-access:
+owner.managerId = $user.id
+
+---
+
+## STEP 10 — GENERATE GRANTS
+
+Link:
+role → policies
+
+Example:
+stock-staff → product-read
+stock-admin → admin-bypass
+
+---
+
+## STEP 11 — GENERATE SEED FILES
+
+/seed/data/
+permission-domains.json
+permission-resources.json
+permission-roles.json
+permission-policies.json
+permission-grants.json
+
+---
+
+## STEP 12 — CONVERTER SCRIPT
+
+scripts/convert-rutba-permissions.js
+
+Logic:
+
+for each entry:
+create domain
+
+for each role:
+create role
+
+```
+for each grant:
+  extract resource
+  expand actions
+  create policy
+  create grant
+```
+
+Add:
+owner policy
+admin bypass policy
+
+---
+
+## STEP 13 — CONTEXT MIGRATION
+
+Replace headers:
+
+X-Rutba-App → context.activeDomain
+X-Rutba-App-Admin → context.isElevated
+
+---
+
+## STEP 14 — DUAL ENGINE MODE
+
+ENV:
+
+PERMISSION_ENGINE=v1 | v2
+
+v1 → existing guard
+v2 → new plugin
+
+---
+
+## STEP 15 — SHADOW TESTING
+
+Run both:
+
+oldResult = guard
+newResult = engine
+
+Log mismatches
+
+---
+
+## STEP 16 — GRADUAL SWITCH
+
+1. Enable read endpoints
+2. Validate
+3. Enable write endpoints
+4. Full migration
+
+---
+
+## STEP 17 — OWNER SAFETY CHECK
+
+Ensure:
+
+* All owner-based filtering works
+* No cross-user data leakage
+* Create assigns ownership
+
+---
+
+## STEP 18 — CLEANUP
+
+* Remove guard middleware
+* Remove app-access config dependency
+
+---
+
+## FINAL RESULT
+
+* Rutba ERP fully migrated
+* Ownership + elevation preserved
+* DB-driven permissions
+* UI manageable system
+* Ready for scale & reuse

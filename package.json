@@ -1,0 +1,80 @@
+{
+  "name": "strapi-permission-manager-pro",
+  "version": "0.1.0",
+  "description": "Strapi v5 plugin for domain-aware RBAC/ABAC with ownership enforcement and contextual permission evaluation.",
+  "license": "MIT",
+  "author": {
+    "name": "Ejaz Hussain Arain",
+    "email": "eharain@yahoo.com",
+    "url": "https://www.linkedin.com/in/ejazarain"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eharain/strapi-permission-manager-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eharain/strapi-permission-manager-pro/issues"
+  },
+  "homepage": "https://github.com/eharain/strapi-permission-manager-pro#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "strapi",
+    "strapi-plugin",
+    "strapi-v5",
+    "permissions",
+    "rbac",
+    "abac",
+    "ownership",
+    "access-control",
+    "policy-engine",
+    "domain-based-access"
+  ],
+  "exports": {
+    "./strapi-admin": {
+      "source": "./admin/src/index.js",
+      "import": "./admin/src/index.js",
+      "require": "./admin/src/index.js",
+      "default": "./admin/src/index.js"
+    },
+    "./strapi-server": {
+      "source": "./server/src/index.js",
+      "import": "./server/src/index.js",
+      "require": "./server/src/index.js",
+      "default": "./server/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "strapi": {
+    "name": "permission-manager-pro",
+    "description": "Domain-aware RBAC/ABAC permission engine for Strapi",
+    "kind": "plugin",
+    "displayName": "Permission Manager Pro"
+  },
+  "main": "strapi-server.js",
+  "files": [
+    "admin/",
+    "server/",
+    "docs/",
+    "README.md",
+    "LICENSE",
+    "strapi-admin.js",
+    "strapi-server.js"
+  ],
+  "scripts": {
+    "build": "echo \"Build from host Strapi app\"",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "peerDependencies": {
+    "@strapi/strapi": "^5.0.0",
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0",
+    "react-router-dom": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=6.0.0"
+  }
+}

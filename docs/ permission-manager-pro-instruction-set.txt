@@ -1,0 +1,293 @@
+PERMISSION MANAGER PRO — BUILDER ENTRY INSTRUCTION
+
+---
+
+## PROJECT CONTEXT
+
+You are building a new Strapi plugin:
+
+→ strapi-permission-manager-pro
+
+This plugin will replace the existing permission system used in Rutba ERP.
+
+Reference existing plugin (for structure, publishing, metadata, and symlink usage):
+D:\Rutba\strapi-plugins\strapi-content-sync-pro
+
+This plugin:
+
+* is already published on npm
+* is used via symlink in:
+  D:\Rutba\ERP\pos-strapi
+  ready pos-strapi package.json scripts for linking
+
+The new plugin MUST follow the same:
+
+* folder structure
+* packaging approach
+* symlink usage via package.json
+* plugin metadata structure (author, name, description, etc.)
+
+Copy author and plugin metadata from:
+strapi-content-sync-pro/package.json
+
+And apply to:
+strapi-permission-manager-pro plugin entry (admin panel + package.json)
+
+---
+
+## CURRENT RUTBA ERP PERMISSION SYSTEM (TO BE REPLACED)
+
+Config files:
+D:\Rutba\ERP\pos-strapi\config\app-access-permissions.js
+D:\Rutba\ERP\pos-strapi\config\app-access-routes.js
+
+Middleware enforcing permissions:
+D:\Rutba\ERP\pos-strapi\src\middlewares\app-access-guard.js
+
+Seeder system exists:
+
+* JSON-based
+* idempotent
+* supports relations ($seedLink)
+
+IMPORTANT:
+The logic in app-access-guard.js is the TRUE behavior and MUST be preserved.
+
+---
+
+## KEY BEHAVIOR TO REPLICATE (CRITICAL)
+
+1. App-based access (X-Rutba-App)
+2. Admin elevation (X-Rutba-App-Admin)
+3. Owner-based access (owners relation)
+4. Auto-ownership on create
+5. Owner filtering on read
+6. Ownership validation on update/delete
+7. Elevated users bypass ownership
+8. Non-owner access ONLY when elevated
+
+THIS MUST NOT BREAK.
+
+---
+
+## TARGET SYSTEM (NEW PLUGIN)
+
+The plugin will implement:
+
+1. Domain-based access (replaces app-access keys)
+2. Role-based access (staff, manager, admin)
+3. Policy-based permissions
+4. Condition-based access (ABAC)
+5. Ownership enforcement
+6. Context-based evaluation (domain + elevation)
+7. Query-level filtering
+8. Field-level permissions (later phase)
+
+---
+
+## PLUGIN LOCATION
+
+Create plugin in:
+
+D:\Rutba\strapi-plugins\strapi-permission-manager-pro
+
+---
+
+## PLUGIN USAGE (IMPORTANT)
+
+The plugin MUST be used exactly like:
+
+strapi-content-sync-pro
+
+i.e. via symlink in:
+D:\Rutba\ERP\pos-strapi
+
+Ensure compatibility with:
+package.json scripts (linking mechanism)
+
+---
+
+## SEEDING REQUIREMENT
+
+The current file:
+
+app-access-permissions.js
+
+MUST be converted into seed data compatible with existing seeder system.
+
+Target seed files:
+
+/seed/data/
+permission-domains.json
+permission-resources.json
+permission-roles.json
+permission-policies.json
+permission-grants.json
+
+Use existing:
+json-seed-runner.js
+
+---
+
+## CONVERTER REQUIREMENT
+
+Create script:
+
+scripts/convert-rutba-permissions.js
+
+This script must:
+
+1. Parse app-access-permissions.js
+
+2. Parse app-access-routes.js
+
+3. Extract:
+
+   * domains (app keys)
+   * roles (staff/manager/admin)
+   * resources (from UID)
+   * actions (expanded)
+
+4. Generate:
+
+   * domains
+   * resources
+   * roles
+   * policies
+   * grants
+
+5. ALSO inject system policies:
+
+   * owner-access
+   * admin-bypass
+   * shared-access (future ready)
+   * manager-access (relation-based)
+
+---
+
+## PLUGIN CORE MODULES TO BUILD
+
+1. context-resolver
+
+   * Converts headers → runtime context
+   * activeDomain
+   * isElevated
+
+2. permission-engine
+
+   * can(user, action, resource, entity, context)
+
+3. condition-evaluator
+
+   * supports relation paths
+   * supports operators: equals, includes, in
+
+4. filter-builder
+
+   * converts policies → Strapi filters
+   * enforces ownership
+
+5. ownership-handler
+
+   * auto assign owner on create
+   * enforce ownership on update/delete
+
+6. seed integration
+
+   * use existing JSON seeder
+
+---
+
+## ADMIN UI REQUIREMENTS
+
+Add plugin entry in Strapi admin:
+
+Menu:
+Permission Manager Pro
+
+Pages:
+
+1. Dashboard
+2. Domains
+3. Resources
+4. Roles
+5. Policies
+6. Access Simulator
+
+Components:
+
+* Permission Matrix (CRUD grid)
+* Policy Builder
+* Condition Builder (visual relation editor)
+* Role assignment panel
+* Access simulation tool
+
+---
+
+## MIGRATION STRATEGY
+
+Use dual mode:
+
+ENV:
+PERMISSION_ENGINE=v1 | v2
+
+v1 → existing guard
+v2 → new plugin
+
+Run both in parallel:
+
+Compare:
+old (guard) vs new (engine)
+
+Log mismatches
+
+---
+
+## NON-NEGOTIABLE RULES
+
+1. No data leakage across users
+2. Ownership must always be enforced unless elevated
+3. Query filtering must be used (not only middleware checks)
+4. Existing behavior must match exactly before switching
+5. Seeder must be idempotent
+6. Plugin must be reusable across projects
+
+---
+
+## DELIVERABLES
+
+1. Working plugin (strapi-permission-manager-pro)
+2. Converter script
+3. Seed files generated from Rutba config
+4. Admin UI (basic → advanced)
+5. Migration support (dual mode)
+6. Documentation
+
+---
+
+## STARTING POINT
+
+1. Clone structure of:
+   strapi-content-sync-pro
+
+2. Create plugin skeleton
+
+3. Implement:
+
+   * data model
+   * permission engine
+   * filter builder
+
+4. Build converter script
+
+5. Generate seeds
+
+6. Integrate into pos-strapi
+
+7. Run dual mode
+
+8. Validate behavior
+
+---
+
+## END OF INSTRUCTION

@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "permission_roles",
+  "info": {
+    "singularName": "permission-role",
+    "pluralName": "permission-roles",
+    "displayName": "Permission Role"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "level": {
+      "type": "enumeration",
+      "enum": [
+        "staff",
+        "manager",
+        "admin"
+      ],
+      "required": true
+    },
+    "domain": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::permission-manager-pro.permission-domain"
+    }
+  }
+}

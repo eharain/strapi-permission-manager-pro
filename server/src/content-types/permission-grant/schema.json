@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "permission_grants",
+  "info": {
+    "singularName": "permission-grant",
+    "pluralName": "permission-grants",
+    "displayName": "Permission Grant"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "role": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::permission-manager-pro.permission-role",
+      "required": true
+    },
+    "policy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::permission-manager-pro.permission-policy",
+      "required": true
+    }
+  }
+}

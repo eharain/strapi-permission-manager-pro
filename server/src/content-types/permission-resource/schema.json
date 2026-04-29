@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "permission_resources",
+  "info": {
+    "singularName": "permission-resource",
+    "pluralName": "permission-resources",
+    "displayName": "Permission Resource"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "uid": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "domain": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::permission-manager-pro.permission-domain"
+    }
+  }
+}

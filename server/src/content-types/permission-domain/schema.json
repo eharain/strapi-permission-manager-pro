@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "permission_domains",
+  "info": {
+    "singularName": "permission-domain",
+    "pluralName": "permission-domains",
+    "displayName": "Permission Domain"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "permission_policies",
+  "info": {
+    "singularName": "permission-policy",
+    "pluralName": "permission-policies",
+    "displayName": "Permission Policy"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "actions": {
+      "type": "json",
+      "required": true
+    },
+    "conditions": {
+      "type": "json",
+      "default": []
+    },
+    "fields": {
+      "type": "json",
+      "default": []
+    },
+    "effect": {
+      "type": "enumeration",
+      "enum": [
+        "allow",
+        "deny"
+      ],
+      "default": "allow",
+      "required": true
+    },
+    "resource": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::permission-manager-pro.permission-resource"
+    }
+  }
+}

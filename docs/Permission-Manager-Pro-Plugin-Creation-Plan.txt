@@ -1,0 +1,243 @@
+STRAPI PERMISSION MANAGER PRO — COMPLETE BUILD PLAN (WITH OWNER & CONTEXT MODEL)
+
+OBJECTIVE:
+Build a production-grade permission engine plugin that replaces:
+
+* app-access config
+* app-access-guard middleware
+
+Supports:
+
+* RBAC (roles)
+* ABAC (conditions)
+* Ownership (owners relation)
+* Context-based access (app/domain + elevation)
+* Field-level security
+* Query-level enforcement
+
+---
+
+## PHASE 0 — CORE DESIGN PRINCIPLES
+
+1. Replace headers with context:
+   X-Rutba-App        → context.activeDomain
+   X-Rutba-App-Admin  → context.isElevated
+
+2. Ownership is NOT optional:
+
+   * Must be enforced at query level
+   * Must be part of policy system
+
+3. Deny by default
+
+4. Query filtering is mandatory
+
+---
+
+## PHASE 1 — PLUGIN STRUCTURE
+
+/plugins/permission-pro
+/server
+/content-types
+/services
+permission-engine.ts
+filter-builder.ts
+condition-evaluator.ts
+context-resolver.ts
+/policies
+/middlewares
+/admin
+/pages
+/components
+
+---
+
+## PHASE 2 — DATA MODEL
+
+1. permission-domain
+   key, name, description
+
+2. permission-resource
+   key, uid, domain
+
+3. permission-role
+   key, level (staff/manager/admin), domain
+
+4. permission-policy
+   key
+   resource
+   actions
+   conditions
+   fields
+   effect
+
+5. permission-grant
+   role → policy
+
+---
+
+## PHASE 3 — CONTEXT RESOLVER (REPLACES HEADERS)
+
+Build context per request:
+
+context = {
+user,
+activeDomain,   // from header or session
+isElevated,     // from header + role validation
+teamIds,
+roles
+}
+
+Rules:
+
+* activeDomain required for app users
+* isElevated only if user has admin role for domain
+
+---
+
+## PHASE 4 — PERMISSION ENGINE
+
+API:
+can(user, action, resource, entity, context)
+
+Flow:
+
+1. Resolve roles
+2. Load policies
+3. Evaluate conditions
+4. Apply priority (deny > allow)
+
+---
+
+## PHASE 5 — CONDITION DSL (RELATION-BASED)
+
+Examples:
+
+Owner:
+owners includes $user.id
+
+Shared:
+sharedWith includes $user.id
+
+Manager:
+owner.managerId = $user.id
+
+Team:
+teamId in $user.teamIds
+
+Elevation:
+isElevated = true
+
+---
+
+## PHASE 6 — QUERY FILTER BUILDER (CRITICAL)
+
+Convert conditions → Strapi filters
+
+Example:
+
+{
+"$or": [
+{ "owners": { "$in": [user.id] } },
+{ "sharedWith": { "$in": [user.id] } },
+{ "owner": { "managerId": { "$eq": user.id } } }
+]
+}
+
+Rules:
+
+* Always push to DB
+* Never rely only on JS filtering
+
+---
+
+## PHASE 7 — OWNER SCOPING (MANDATORY)
+
+If resource has "owners" relation:
+
+CREATE:
+auto assign owner
+
+READ:
+filter by owners unless elevated
+
+UPDATE/DELETE:
+verify ownership unless elevated
+
+If no owners relation:
+elevated users get full access
+
+---
+
+## PHASE 8 — FIELD-LEVEL SECURITY
+
+* Strip restricted fields on read
+* Block restricted fields on write
+
+---
+
+## PHASE 9 — ADMIN UI
+
+Modules:
+
+1. Dashboard
+2. Domains
+3. Resources
+4. Roles
+5. Policies
+6. Access Simulator
+
+Key UI Components:
+
+* Permission Matrix (CRUD grid)
+* Policy Builder (conditions + fields)
+* Condition Builder (visual relation builder)
+* Access Simulator (debugging tool)
+
+---
+
+## PHASE 10 — SEED SYSTEM
+
+Use JSON seeds:
+
+/seed/data/
+permission-domains.json
+permission-resources.json
+permission-roles.json
+permission-policies.json
+permission-grants.json
+
+Support:
+
+* idempotency
+* $seedLink relations
+
+---
+
+## PHASE 11 — PERFORMANCE
+
+* Cache permissions per user
+* Cache compiled filters
+* Preload relations
+
+---
+
+## PHASE 12 — EXECUTION ORDER
+
+1. Data model
+2. Context resolver
+3. Permission engine
+4. Filter builder
+5. Owner enforcement
+6. Seed integration
+7. UI
+8. Migration
+
+---
+
+## FINAL RESULT
+
+* Fully replaces app-access-guard
+* Supports relational permissions
+* Works across all modules
+* UI-driven permission management
