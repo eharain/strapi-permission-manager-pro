@@ -38,7 +38,10 @@ module.exports = {
   },
 
   routes: {
-    admin: adminRoutes,
+    admin: {
+      type: "admin",
+      routes: adminRoutes,
+    },
   },
 
   contentTypes: {

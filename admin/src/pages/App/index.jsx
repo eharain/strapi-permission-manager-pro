@@ -6,13 +6,13 @@ import {
   Button,
   Flex,
   TextInput,
-  Select,
-  Option,
+  SingleSelect,
+  SingleSelectOption,
   MultiSelect,
   MultiSelectOption,
   Divider,
 } from "@strapi/design-system";
-import { request } from "@strapi/helper-plugin";
+import { useFetchClient } from "@strapi/strapi/admin";
 
 const TABS = [
   { key: "domains", label: "Domains" },
@@ -34,6 +34,7 @@ const ENTITY_CONFIG = {
 const endpoint = (path) => `/permission-manager-pro${path}`;
 
 const HomePage = () => {
+  const { get, post, put, del } = useFetchClient();
   const [activeTab, setActiveTab] = useState("domains");
   const [overview, setOverview] = useState({});
   const [entityData, setEntityData] = useState({
@@ -66,7 +67,7 @@ const HomePage = () => {
 
   const loadOverview = async () => {
     try {
-      const data = await request(endpoint("/overview"), { method: "GET" });
+      const { data } = await get(endpoint("/overview"));
       setOverview(data || {});
     } catch {
       setMessage("Failed to load overview.");
@@ -74,7 +75,7 @@ const HomePage = () => {
   };
 
   const loadEntity = async (entity) => {
-    const data = await request(endpoint(`/entities/${entity}`), { method: "GET" });
+    const { data } = await get(endpoint(`/entities/${entity}`));
     setEntityData((prev) => ({ ...prev, [entity]: data?.data || [] }));
   };
 
@@ -92,11 +93,11 @@ const HomePage = () => {
   const loadUsersAndRoles = async () => {
     try {
       const [usersRes, rolesRes] = await Promise.all([
-        request(endpoint("/users"), { method: "GET" }),
-        request(endpoint("/entities/roles"), { method: "GET" }),
+        get(endpoint("/users")),
+        get(endpoint("/entities/roles")),
       ]);
-      setUsers(usersRes?.data || []);
-      setRoleOptions(rolesRes?.data || []);
+      setUsers(usersRes?.data?.data || []);
+      setRoleOptions(rolesRes?.data?.data || []);
     } catch {
       setMessage("Failed to load users/roles.");
     }
@@ -112,10 +113,7 @@ const HomePage = () => {
     setMessage("");
 
     try {
-      await request(endpoint(`/entities/${activeTab}`), {
-        method: "POST",
-        body: { data: formState },
-      });
+      await post(endpoint(`/entities/${activeTab}`), { data: formState });
       setMessage(`${activeTab} entry created.`);
       setFormState({});
       await loadEntity(activeTab);
@@ -132,7 +130,7 @@ const HomePage = () => {
     setMessage("");
 
     try {
-      await request(endpoint(`/entities/${entity}/${id}`), { method: "DELETE" });
+      await del(endpoint(`/entities/${entity}/${id}`));
       setMessage(`${entity} entry deleted.`);
       await loadEntity(entity);
       await loadOverview();
@@ -156,9 +154,8 @@ const HomePage = () => {
     setMessage("");
 
     try {
-      await request(endpoint(`/users/${selectedUserId}/roles`), {
-        method: "PUT",
-        body: { roleIds: selectedRoleIds.map((id) => Number(id)) },
+      await put(endpoint(`/users/${selectedUserId}/roles`), {
+        roleIds: selectedRoleIds.map((id) => Number(id)),
       });
       setMessage("User role assignment updated.");
       await loadUsersAndRoles();
@@ -214,13 +211,13 @@ const HomePage = () => {
     <Box paddingTop={4}>
       <Typography variant="beta">Assign permission roles to users</Typography>
       <Box paddingTop={3}>
-        <Select label="User" placeholder="Select user" value={selectedUserId} onChange={selectUser}>
+        <SingleSelect label="User" placeholder="Select user" value={selectedUserId} onChange={selectUser}>
           {users.map((user) => (
-            <Option key={user.id} value={String(user.id)}>
+            <SingleSelectOption key={user.id} value={String(user.id)}>
               {user.displayName || user.username || user.email}
-            </Option>
+            </SingleSelectOption>
           ))}
-        </Select>
+        </SingleSelect>
       </Box>
 
       <Box paddingTop={3}>
